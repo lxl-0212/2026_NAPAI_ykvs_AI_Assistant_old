@@ -32,7 +32,7 @@ main{width:min(1080px,100%);margin:auto;padding:24px 18px 40px}
   box-shadow:0 9px 24px rgba(49,93,114,.20);border:1px solid rgba(255,255,255,.5)}
 h1{font-size:clamp(1.3rem,3vw,1.8rem);letter-spacing:-.02em;margin:0;font-weight:760}.sub{margin:5px 0 0;color:var(--muted);font-size:.88rem}
 .status{white-space:nowrap;background:var(--success-soft);color:var(--success);border:1px solid #d3e6dc;border-radius:999px;padding:7px 12px;font-size:.78rem;font-weight:650}
-.grid{display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start}
+.grid{display:block}
 .card{background:rgba(255,255,255,.96);border:1px solid rgba(210,222,225,.85);border-radius:18px;box-shadow:0 8px 26px rgba(39,61,70,.06);backdrop-filter:blur(8px)}
 .side{padding:14px;height:max-content;position:sticky;top:14px}.side h2{font-size:.88rem;margin:5px 8px 11px;color:#5d7079;font-weight:700}
 .nav{display:grid;gap:6px}.nav button{width:100%;text-align:left;border:1px solid transparent;background:transparent;color:#3e5661;
@@ -71,20 +71,7 @@ textarea::placeholder{color:#a5b1b5}textarea:hover{border-color:#b9cbd0}textarea
 </header>
 
 <div class="grid">
-  <aside class="card side" aria-label="快速分類">
-    <h2>快速分類</h2>
-    <div class="nav">
-      <button class="active" data-query="鶯歌工商生活輔導組分機是多少？">☎ 分機查詢</button>
-      <button data-query="資二忠班級分機是多少？">🏫 班級／場館</button>
-      <button data-query="鶯歌工商學生學習評量補充規定，段考成績如何計算？">📊 成績考核</button>
-      <button data-query="鶯歌工商段考補考規定與申請方式">📝 段考／補考</button>
-      <button data-query="鶯歌工商重修補修有哪些規定？">📚 重修／補修</button>
-      <button data-query="鶯歌工商學生抵免學分規定">🎓 學分／畢業</button>
-      <button data-query="鶯歌工商學生學習歷程檔案作業補充規定">🗂 學習歷程</button>
-      <button data-query="鶯歌工商學生請假規則，病假返校後多久要補辦？">📌 學務法規</button>
-    </div>
-    <div class="note">可直接用自然語言詢問校務問題，系統會整理成容易理解的回答，協助師生快速知道怎麼做。</div>
-  </aside>
+
 
   <section class="card chat" aria-label="校務資料查詢">
     <div class="welcome"><strong>今天想查什麼？</strong><span>可以直接用自然語言提問，例如「補考幾次？」、「段考沒考怎麼辦？」</span></div>
