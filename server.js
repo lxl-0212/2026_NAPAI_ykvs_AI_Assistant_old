@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { dirname, join } from 'node:path';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { MCPClient } from './mcp-client.js';
 import { OpenAILLMClient } from './llm-client-openai.js';
@@ -15,12 +16,23 @@ const llm = new OpenAILLMClient(mcp);
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static(join(__dirname, 'web')));
 
-// Render 服務的首頁：專案使用 web/ykvs.html，而不是 web/index.html。
-// 因此明確把 / 對應到 ykvs.html，避免直接開 Render 網址時出現「無法獲取 /」。
+// 相容不同 GitHub 上傳方式：優先使用 web/ykvs.html，
+// 如果 GitHub 根目錄只有 ykvs.html，也可以正常開啟。
+const webDir = join(__dirname, 'web');
+const webFile = join(webDir, 'ykvs.html');
+const rootFile = join(__dirname, 'ykvs.html');
+const publicDir = join(__dirname, 'public');
+const publicFile = join(publicDir, 'index.html');
+
+if (existsSync(webDir)) app.use(express.static(webDir));
+if (existsSync(publicDir)) app.use(express.static(publicDir));
+
 app.get('/', (_req, res) => {
-  res.sendFile(join(__dirname, 'web', 'ykvs.html'));
+  if (existsSync(webFile)) return res.sendFile(webFile);
+  if (existsSync(rootFile)) return res.sendFile(rootFile);
+  if (existsSync(publicFile)) return res.sendFile(publicFile);
+  return res.status(404).send('找不到網站首頁檔案（ykvs.html / public/index.html）。請確認 GitHub 已上傳網頁檔案。');
 });
 
 app.get('/healthz', (_req, res) => res.json({ ok: true }));
@@ -50,4 +62,7 @@ app.post('/chat', async (req, res) => {
 });
 
 const PORT = Number(process.env.PORT || 10000);
-app.listen(PORT, '0.0.0.0', () => console.log(`→ YKVS AI Assistant: listening on ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`→ YKVS AI Assistant: listening on ${PORT}`);
+  console.log(`→ homepage: ${existsSync(webFile) ? 'web/ykvs.html' : existsSync(rootFile) ? 'ykvs.html' : existsSync(publicFile) ? 'public/index.html' : 'MISSING'}`);
+});
