@@ -1,1 +1,16 @@
-# 2026_NAPAI_ykvs_AI_Assistant_old
+# 鶯歌工商 MCP MVP 資料包
+
+## 內容
+- `data/staff_extensions.json`：115-1 公告版人員分機、單位、姓名與職稱，以及綜合大樓、教學大樓、圖研大樓、陶工大樓、學生宿舍場館分機。
+- `data/class_extensions.json`：班級分機、年級廣播。
+- `data/regulations/`：生輔組四份規定的可搜尋 Markdown 文字，保留官方連結與原 PDF 名稱。
+- `data/manifest.json`：資料來源索引與筆數。
+- `reports/extraction_check.md`：擷取數量、抽核結果及版本注意事項。
+
+## 分機查詢
+MCP 工具支援按處室／單位、職稱、教師姓名、班級、場館／教室名稱查詢。姓名查詢回傳單位、職稱、姓名及全部公告分機；具體場所查詢只回該場所，查大樓名稱會列出該棟場館清單。
+
+## Gemini/MCP 整合提醒
+不要讓每次查詢都回傳四份法規全文。MCP 工具應依問題搜尋相關 JSON 或 Markdown，只回傳符合的分機紀錄或條文段落與來源網址，降低模型輸入量。
+
+Markdown 是 PDF 的可搜尋文字擷取，不取代校方正式 PDF。分機資料依使用者提供的 115-1 公告版（表列 1150914）擷取；部署前仍應確認校方是否已發布新版本。
