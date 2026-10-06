@@ -1,0 +1,13 @@
+{
+  "name": "鶯歌工商 YKVS Colab 快速安裝資料包 v2",
+  "calendar": "english_center.json; verified 21 weeks; 2026-08-30 through 2027-01-23",
+  "staff": "240 people/extension records; 79 venue extensions",
+  "classes": "57 class extensions plus 3 broadcast records",
+  "regulations": [
+    "行動載具管理規則",
+    "學生獎懲規定",
+    "學生請假規則",
+    "品德教育暨班級生活秩序競賽實施要點"
+  ],
+  "policy": "overlay only; keeps workshop MCP architecture and original index.html/config.json"
+}
