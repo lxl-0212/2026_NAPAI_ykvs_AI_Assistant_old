@@ -1,16 +1,19 @@
-# 鶯歌工商 MCP MVP 資料包
+# 鶯歌工商 Mini AI Assistant｜舊版
 
-## 內容
-- `data/staff_extensions.json`：115-1 公告版人員分機、單位、姓名與職稱，以及綜合大樓、教學大樓、圖研大樓、陶工大樓、學生宿舍場館分機。
-- `data/class_extensions.json`：班級分機、年級廣播。
-- `data/regulations/`：生輔組四份規定的可搜尋 Markdown 文字，保留官方連結與原 PDF 名稱。
-- `data/manifest.json`：資料來源索引與筆數。
-- `reports/extraction_check.md`：擷取數量、抽核結果及版本注意事項。
+這是提供與新版比較用的「舊版自然語言助理」。
 
-## 分機查詢
-MCP 工具支援按處室／單位、職稱、教師姓名、班級、場館／教室名稱查詢。姓名查詢回傳單位、職稱、姓名及全部公告分機；具體場所查詢只回該場所，查大樓名稱會列出該棟場館清單。
+## 舊版特色
+- 師生可以直接用自然語言輸入問題。
+- AI 先查鶯歌工商校務資料，再用白話整理回答。
+- 重點放在「答案是什麼」與「接下來怎麼做」。
+- **不主動顯示資料來源／來源網址**，以便和新版來源查證版比較。
+- 查不到資料時不猜測。
 
-## Gemini/MCP 整合提醒
-不要讓每次查詢都回傳四份法規全文。MCP 工具應依問題搜尋相關 JSON 或 Markdown，只回傳符合的分機紀錄或條文段落與來源網址，降低模型輸入量。
+## 啟動
+```bash
+npm install
+python3 -m pip install -r requirements.txt
+GEMINI_API_KEY=你的金鑰 npm start
+```
 
-Markdown 是 PDF 的可搜尋文字擷取，不取代校方正式 PDF。分機資料依使用者提供的 115-1 公告版（表列 1150914）擷取；部署前仍應確認校方是否已發布新版本。
+Render 環境變數請設定 `GEMINI_API_KEY`。也可使用 OpenAI-compatible endpoint。

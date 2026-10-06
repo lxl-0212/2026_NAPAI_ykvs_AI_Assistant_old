@@ -7,8 +7,7 @@ import { OpenAILLMClient } from './llm-client-openai.js';
 import { getQuickReply } from './quick-reply.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
-process.chdir(ROOT);
+process.chdir(__dirname);
 
 const mcp = new MCPClient();
 await mcp.connect();
@@ -16,7 +15,7 @@ const llm = new OpenAILLMClient(mcp);
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static(join(ROOT, 'web')));
+app.use(express.static(join(__dirname, 'web')));
 app.get('/healthz', (_req, res) => res.json({ ok: true }));
 
 function looksLikeSchoolQuestion(q) {
@@ -33,7 +32,7 @@ app.post('/chat', async (req, res) => {
     const query = String(last?.content ?? '');
     const quick = await getQuickReply(query, mcp);
     if (quick !== null && !looksLikeSchoolQuestion(query)) {
-      return res.json({ reply: quick, messages: [...messages, { role:'assistant', content:quick }] });
+      return res.json({ reply: quick, messages: [...messages, { role: 'assistant', content: quick }] });
     }
     const result = await llm.chat(messages, { forceSchoolTool: looksLikeSchoolQuestion(query) });
     res.json(result);
@@ -43,5 +42,5 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`→ YKVS AI Assistant old version: http://localhost:${PORT}`));
+const PORT = Number(process.env.PORT || 10000);
+app.listen(PORT, '0.0.0.0', () => console.log(`→ YKVS AI Assistant: listening on ${PORT}`));
