@@ -1,4 +1,9 @@
-node_modules/
+node_modules
+npm-debug.log
+.git
+.gitignore
 .env
+.env.*
+__pycache__
+*.pyc
 .DS_Store
-npm-debug.log*

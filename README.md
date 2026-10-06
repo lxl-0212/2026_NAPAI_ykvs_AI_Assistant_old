@@ -1,22 +1,19 @@
-# 鶯歌工商校務 AI 助理｜動態網站新版
+# 鶯歌工商 Mini AI Assistant｜舊版
 
-這個版本以 2026-10-02 的 YKVS Mini AI Assistant Notebook 設定為基礎，部署目標是 Render + Node.js + Express。
+這是提供與新版比較用的「舊版自然語言助理」。
 
-## 核心設計
+## 舊版特色
+- 師生可以直接用自然語言輸入問題。
+- AI 先查鶯歌工商校務資料，再用白話整理回答。
+- 重點放在「答案是什麼」與「接下來怎麼做」。
+- **不主動顯示資料來源／來源網址**，以便和新版來源查證版比較。
+- 查不到資料時不猜測。
 
-- 使用者直接用自然語言提問，不需要先選「法規／處室／資料類型」。
-- 校務規範、請假、獎懲、行動載具等資料可以在後端作為 AI 的背景依據。
-- AI 優先把資料轉成白話、簡潔、容易理解的回答，不要求師生自行閱讀法規。
-- 只有使用者主動要求「來源、依據、哪一條、原文、官方文件」時，才補充來源資訊。
-- 開放式問題維持一般 AI 理解，不會因為出現成績、學分、學習歷程、請假等詞就機械式要求查法規。
-- `/health` 可供 Render 健康檢查。
+## 啟動
+```bash
+npm install
+python3 -m pip install -r requirements.txt
+GEMINI_API_KEY=你的金鑰 npm start
+```
 
-## Render
-
-Build Command：`npm install`
-
-Start Command：`npm start`
-
-Environment Variable：`GEMINI_API_KEY`
-
-不要把 API Key 寫進 GitHub。
+Render 環境變數請設定 `GEMINI_API_KEY`。也可使用 OpenAI-compatible endpoint。
