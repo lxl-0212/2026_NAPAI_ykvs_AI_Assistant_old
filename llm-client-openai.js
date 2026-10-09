@@ -1,31 +1,61 @@
 import OpenAI from 'openai';
 
-export class OpenAILLMClient {
-  constructor(mcp,{baseURL=process.env.OPENAI_BASE_URL||'https://generativelanguage.googleapis.com/v1beta/openai/',apiKey=process.env.OPENAI_API_KEY||process.env.GEMINI_API_KEY||'dummy',model=process.env.OPENAI_MODEL||'gemini-3.1-flash-lite',maxTokens=1200}={}) {
-    this.openai=new OpenAI({baseURL,apiKey,maxRetries:0,timeout:45000}); this.mcp=mcp; this.model=model; this.maxTokens=maxTokens;
-  }
-  _normalize(messages){ return messages.map(m=>Array.isArray(m.content)?{role:m.role,content:m.content.filter(x=>x?.type==='text').map(x=>x.text).join('')}:m); }
-  async chat(messages,{maxIterations=4,forceSchoolTool=false}={}) {
-    const system={role:'system',content:`你是「鶯歌工商校務 AI 助理」的舊版。你的目標是讓學生與老師可以用自然語言直接描述問題，並快速理解答案與下一步怎麼做。
+const SYSTEM = `你是「鶯歌工商校務 AI 助理」。
+- 一般問題用自然、簡潔的繁體中文回答。
+- 涉及學校事實（老師、處室、分機、教室、場館、班級、行事曆、校規等）只能使用 MCP 查到的資料，不得猜測。
+- 人名、職稱、分機尤其禁止自行補寫。
+- 查不到時明確說「目前找不到可以直接支持這個問題的校方資料」。
+- 使用者不必知道資料格式；要理解自然語言、省略樓層、口語說法與同義詞。
+- 只有使用者明確詢問規定、法規、條文、原文或正式文件時才展開法規內容。
+- 回答直接提供自然語言結果，不在回答末尾列出資料來源。`;
 
-重要規則：
-1. 涉及鶯歌工商的分機、人名、處室、教室、場館、行事曆、請假、校務規定等資訊，必須先使用 search_school_info 查詢校方資料，不可以憑記憶猜測。
-2. 查到資料後，請用自然、簡單、容易理解的繁體中文回答；不要把 JSON 原封不動丟給使用者。
-3. 回答重點放在「答案是什麼」以及「師生接下來怎麼做」。必要時用條列式。
-4. 不要主動顯示資料來源、來源網址、引用連結、文件名稱或「資料來源」欄位。這是舊版的特色。
-5. 使用者沒有要求法規原文時，不要貼大量條文；先用白話說明怎麼做。
-6. 資料查不到時要明確說「目前找不到相關校務資料」，不要自行編造。
-7. 一般聊天問題可以直接回答；校務問題以 MCP 查到的資料為準。`};
-    let history=[system,...this._normalize(messages)];
-    for(let i=0;i<maxIterations;i++){
-      const req={model:this.model,max_tokens:this.maxTokens,tools:this.mcp.getOpenAITools(),messages:history};
-      if(forceSchoolTool && i===0) req.tool_choice={type:'function',function:{name:'search_school_info'}};
-      const resp=await this.openai.chat.completions.create(req);
-      const msg=resp.choices[0].message; history.push(msg);
-      if(!msg.tool_calls?.length) return {reply:String(msg.content||'').replace(/<\|channel>.*?<channel\|>/gs,'').trim(),messages:history.slice(1)};
-      const results=await Promise.all(msg.tool_calls.map(async tc=>{let args={};try{args=JSON.parse(tc.function.arguments||'{}')}catch{};try{return {role:'tool',tool_call_id:tc.id,content:await this.mcp.callTool(tc.function.name,args)}}catch(e){return {role:'tool',tool_call_id:tc.id,content:`Error: ${e.message}`}}}));
-      history.push(...results);
+function fallbackNatural(q, raw) {
+  let d = {}; try { d = JSON.parse(raw); } catch { return '目前找不到可以直接支持這個問題的校方資料。'; }
+  if (d.場館分機?.length) {
+    return d.場館分機.map(r => `「${r.場所 || ''}」的分機是 ${Array.isArray(r.分機) ? r.分機.join('、') : r.分機 || '未提供'}。`).join('\n');
+  }
+  if (d.分機總表紀錄?.length) {
+    return d.分機總表紀錄.map(r => `${r.姓名 || r.職稱 || r.單位 || '查詢對象'}：分機 ${Array.isArray(r.分機) ? r.分機.join('、') : r.分機 || '未提供'}。`).join('\n');
+  }
+  if (d.班級分機?.length) return d.班級分機.map(r => `${r.班級}：分機 ${Array.isArray(r.分機) ? r.分機.join('、') : r.分機}。`).join('\n');
+  if (d.行事曆) return `查到 ${d.行事曆.length} 筆相關行事曆資料。`;
+  if (d.法規結果?.length) return d.法規結果.map(x => `${x.文件}\n${x.原文摘錄}`).join('\n\n');
+  return `${d.結果 || '目前找不到可以直接支持這個問題的校方資料。'}`;
+}
+
+export class OpenAILLMClient {
+  constructor(mcp) {
+    this.mcp = mcp;
+    const key = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY;
+    this.enabled = Boolean(key);
+    this.openai = this.enabled ? new OpenAI({
+      baseURL: process.env.OPENAI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/',
+      apiKey: key,
+      timeout: 45000,
+      maxRetries: 0
+    }) : null;
+    this.model = process.env.OPENAI_MODEL || 'gemini-3.1-flash-lite';
+  }
+
+  async chat(messages, {forceTool=false}={}) {
+    const user = String([...messages].reverse().find(x => x?.role === 'user')?.content || '');
+    if (!this.enabled) {
+      const raw = await this.mcp.callTool('search_school_info', {query:user});
+      const answer = fallbackNatural(user, raw);
+      return {reply:answer, messages:[...messages,{role:'assistant',content:answer}]};
     }
-    throw new Error('AI 查詢超過預期次數，請再試一次。');
+    const history = [{role:'system',content:SYSTEM}, ...messages.map(m => ({role:m.role, content:Array.isArray(m.content) ? m.content.filter(x=>x?.type==='text').map(x=>x.text).join('') : m.content}))];
+    const first = await this.openai.chat.completions.create({model:this.model,messages:history,tools:this.mcp.getOpenAITools(),tool_choice:forceTool?'required':'auto',max_tokens:1200});
+    const msg = first.choices?.[0]?.message || {};
+    history.push(msg);
+    if (!msg.tool_calls?.length) return {reply:String(msg.content||''),messages:history};
+    for (const tc of msg.tool_calls) {
+      let args={}; try { args=JSON.parse(tc.function.arguments||'{}'); } catch {}
+      const out=await this.mcp.callTool(tc.function.name,args);
+      history.push({role:'tool',tool_call_id:tc.id,content:out});
+    }
+    const final=await this.openai.chat.completions.create({model:this.model,messages:history,max_tokens:1200});
+    let answer=String(final.choices?.[0]?.message?.content||'');
+    return {reply:answer,messages:history};
   }
 }

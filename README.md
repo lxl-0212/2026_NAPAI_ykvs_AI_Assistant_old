@@ -1,19 +1,17 @@
-# 鶯歌工商 Mini AI Assistant｜舊版
+# YKVS AI Assistant — Stable Render Version
 
-這是提供與新版比較用的「舊版自然語言助理」。
+這個版本把 MCP stdio server 改成 Python 標準函式庫實作，不依賴 Python `mcp` 套件，避免 Render 啟動時因 Python 套件或 FastMCP 版本造成服務退出。
 
-## 舊版特色
-- 師生可以直接用自然語言輸入問題。
-- AI 先查鶯歌工商校務資料，再用白話整理回答。
-- 重點放在「答案是什麼」與「接下來怎麼做」。
-- **不主動顯示資料來源／來源網址**，以便和新版來源查證版比較。
-- 查不到資料時不猜測。
+## GitHub 根目錄
 
-## 啟動
-```bash
-npm install
-python3 -m pip install -r requirements.txt
-GEMINI_API_KEY=你的金鑰 npm start
-```
+`server.js`、`mcp-client.js`、`hello_tool.py`、`llm-client-openai.js`、`quick-reply.js`、`package.json`、`render.yaml`、`public/`、`data/` 必須位於同一個專案根目錄。
 
-Render 環境變數請設定 `GEMINI_API_KEY`。也可使用 OpenAI-compatible endpoint。
+## Render
+
+Build Command: `npm install`
+
+Start Command: `node server.js`
+
+Health Check: `/healthz`
+
+如果設定 `GEMINI_API_KEY` 或 `OPENAI_API_KEY`，系統會使用 LLM 做自然語言整理；即使沒有 API Key，校務查詢仍會用 MCP 資料產生可讀的自然語言回答。
