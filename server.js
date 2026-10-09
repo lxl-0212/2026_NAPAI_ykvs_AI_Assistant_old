@@ -1,23 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { MCPClient } from './mcp-client.js';
 import { OpenAILLMClient } from './llm-client-openai.js';
 import { getQuickReply } from './quick-reply.js';
 
 const app = express();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const publicDir = path.join(__dirname, 'public');
-
 app.use(express.json({ limit: '1mb' }));
-// Use an absolute path so Render's working directory does not affect static files.
-app.use(express.static(publicDir));
-// Explicit homepage route prevents Cannot GET / if static-file resolution changes.
-app.get('/', (req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
-});
+app.use(express.static('public'));
 
 const mcp = new MCPClient();
 const llm = new OpenAILLMClient(mcp);
