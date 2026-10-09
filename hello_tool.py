@@ -101,11 +101,19 @@ def calendar_results(q):
     d = load_json('english_center.json')
     weeks = d.get('calendar_weeks', [])
     cq = compact(q)
-    dates = re.findall(r'(\d{1,2})月(\d{1,2})日', cq)
+    dates = re.findall(r'(\d{1,2})\s*(?:月|/|-)(\d{1,2})\s*日?', cq)
     months = re.findall(r'(\d{1,2})月', cq)
+    current_week = any(x in cq for x in ['本週', '這週', '本星期', '這星期'])
+    today = None
+    if current_week:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        today = datetime.now(ZoneInfo('Asia/Taipei')).date().isoformat()
     out = []
     for w in weeks:
         ds = w.get('每日日期', [])
+        if current_week and today not in ds:
+            continue
         if dates and not any(str(x).endswith(f'-{int(dates[0][0]):02d}-{int(dates[0][1]):02d}') for x in ds):
             continue
         if not dates and months and not any(f'-{int(months[0]):02d}-' in str(x) for x in ds):
@@ -116,22 +124,41 @@ def calendar_results(q):
     return {'行事曆': out, '來源': d.get('calendar_source', '請查校方最新公告')}
 
 
+def academic_regulation_results(q):
+    data = load_json('additional_regulations.json')
+    cq = compact(q)
+    matches = []
+    for row in data.get('records', []):
+        hits = [compact(k) for k in row.get('keywords', []) if compact(k) and compact(k) in cq]
+        if hits:
+            matches.append((len(hits), max(map(len, hits)), row))
+    if not matches:
+        return []
+    matches.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return [
+        {'類別': row.get('category', ''), '標題': row.get('title', ''), '摘要': row.get('content', '')}
+        for _, _, row in matches[:2]
+    ]
+
+
 def search_school_info(query: str):
     q = str(query or '').strip()
     cq = compact(q)
     if not q:
         return {'錯誤': '請輸入查詢內容。'}
-    if any(x in cq for x in ['法規','規定','條文','原文','正式文件']):
-        for fn, meta in REGULATIONS.items():
-            if any(compact(k) in cq for k in meta['keywords']):
-                p = REG / fn
-                text = p.read_text(encoding='utf-8') if p.exists() else ''
-                return {'查詢': q, '法規結果': [{'文件': meta['title'], '原文摘錄': text[:5000], '來源': 'https://www.ykvs.ntpc.edu.tw/'}]}
-    if any(x in cq for x in ['行事曆','行事历','行程']) or re.search(r'\d{1,2}月\d{1,2}日', cq):
+    for fn, meta in REGULATIONS.items():
+        if any(compact(k) in cq for k in meta['keywords']):
+            p = REG / fn
+            text = p.read_text(encoding='utf-8') if p.exists() else ''
+            return {'查詢': q, '法規結果': [{'文件': meta['title'], '原文摘錄': text[:5000], '來源': 'https://www.ykvs.ntpc.edu.tw/'}]}
+    if any(x in cq for x in ['行事曆','行事历','行程']) or re.search(r'\d{1,2}\s*(?:月|/|-)\s*\d{1,2}', cq):
         return {'查詢': q, **calendar_results(q)}
     ext = extension_results(q)
     if ext:
         return {'查詢': q, **ext}
+    academic_rules = academic_regulation_results(q)
+    if academic_rules:
+        return {'查詢': q, '校務規定結果': academic_rules}
     return {'查詢': q, '結果': '在目前校方資料中找不到明確紀錄。', '官方首頁': 'https://www.ykvs.ntpc.edu.tw/'}
 
 
